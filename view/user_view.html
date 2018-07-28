@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>图书借阅 - 用户模式</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
+    <style>
+        tr:nth-of-type(1) {
+            border-top: 1px solid black;
+        }
+
+        tr {
+            border-bottom: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="returnBook()">我要还书</button>
+    <table>
+        <tbody>
+            <tr>
+                <th>序号</th>
+                <th>书名</th>
+                <th>作者</th>
+                <th>借阅状态</th>
+                <th>借阅人</th>
+                <th>备注</th>
+                <th>操作</th>
+            </tr>
+        </tbody>
+        <tbody id="books-container"></tbody>
+    </table>
+
+    <script>
+        function getBookList() {
+            $('#books-container').empty();
+            axios('/books/list', { method: "GET" })
+                .then(function (res) {
+                    window.__BOOKS__ = [];
+                    res.data.data.map(function(b, i) {
+                        window.__BOOKS__.push({ ...b, index: i + 1 });
+                        $('#books-container').append(`
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td>${b.name}</td>
+                                <td>${b.author}</td>
+                                <td>${b.rentable ? '可借阅' : '不可借阅'}</td>
+                                <td>${b.borrower}</td>
+                                <td>${b.remarks}</td>
+                                <td>
+                                    ${b.rentable ?
+                                        '<a href="javascript:void(0)" onclick="borrowBook(\'' + b._id + '\')">借阅</a>'
+                                        :
+                                        ''
+                                    }
+                                </td>
+                            </tr>
+                        `);
+                    });
+                })
+                .catch(function (err) {
+                    alert('获取书籍信息时出错');
+                })
+        }
+
+        function borrowBook(id) {
+            // 此处需要写个弹出框/填写借书人，备注页面
+            // 所有图书信息在取回时已挂载至 window.__BOOKS__ ，根据 _id 获取相应信息即可
+            var newBorrower = '另一位勇士',
+                newRemarks = '上一位勇士不想看了';
+
+            var { name, author } = window.__BOOKS__.find(function (b) {
+                return b._id === id;
+            })
+            axios('/books/update', {
+                method: 'POST',
+                data: {
+                    id,
+                    name,
+                    author,
+                    rentable: false,
+                    borrower: newBorrower,
+                    remarks: newRemarks
+                }
+            }).then(function (res) {
+                alert(res.data.message);
+                getBookList();
+            }).catch(function (err) {
+                alert('上传借书信息时出现请求错误');
+            });
+        }
+
+        function returnBook() {
+            // 此处需要写一个弹框来填写书本 index 及备注
+            // 此处写死为还第六本书
+
+            var index = 6;
+                newRemarks = '勇士把书还了',
+                { _id, name, author } = window.__BOOKS__.find(function (b) {
+                    return b.index === index;
+                })
+            axios('/books/update', {
+                method: 'POST',
+                data: {
+                    id: _id,
+                    name,
+                    author,
+                    rentable: true,
+                    borrower: '',
+                    remarks: newRemarks
+                }
+            }).then(function (res) {
+                alert(res.data.message);
+                getBookList();
+            }).catch(function (err) {
+                alert('上传还书信息时出现请求错误');
+            });
+        }
+
+        $(function() {
+            getBookList();
+        })
+    </script>
+</body>
+</html>

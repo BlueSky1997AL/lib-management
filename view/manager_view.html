@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>图书管理 - 管理员模式</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
+    <style>
+        tr:nth-of-type(1) {
+            border-top: 1px solid black;
+        }
+
+        tr {
+            border-bottom: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="createBook()">添加图书</button>
+    <table>
+        <tbody>
+            <tr>
+                <th>序号</th>
+                <th>书名</th>
+                <th>作者</th>
+                <th>借阅状态</th>
+                <th>借阅人</th>
+                <th>备注</th>
+                <th>操作</th>
+            </tr>
+        </tbody>
+        <tbody id="books-container"></tbody>
+    </table>
+
+    <script>
+        // 此处为示例用法，需要自己修改，该处方法上传内容写死
+        function createBook() {
+            axios('/books/create', {
+                method: 'POST',
+                data: {
+                    name: '十万个为什么',
+                    author: '人民教育出版社',
+                    rentable: true,
+                    borrower: '',
+                    remarks: ''
+                }
+            }).then(function (res) {
+                alert(res.data.message);
+                getBookList();
+            }).catch(function (err) {
+                alert('创建图书时出现请求错误');
+            })
+        }
+
+        function getBookList() {
+            $('#books-container').empty();
+            axios('/books/list', { method: "GET" })
+                .then(function (res) {
+                    window.__BOOKS__ = res.data.data;
+                    res.data.data.map(function(b, i) {
+                        $('#books-container').append(`
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td>${b.name}</td>
+                                <td>${b.author}</td>
+                                <td>${b.rentable ? '可借阅' : '不可借阅'}</td>
+                                <td>${b.borrower}</td>
+                                <td>${b.remarks}</td>
+                                <td>
+                                        <a href="javascript:void(0)" onclick="editBook('${b._id}')">编辑</a>
+                                        <a href="javascript:void(0)" onclick="removeBook('${b._id}')">删除</a>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                })
+                .catch(function (err) {
+                    alert('获取书籍信息时出错');
+                })
+        }
+
+        function editBook(id) {
+            // 此处需要写个弹出框/编辑页面
+            // 所有图书信息在取回时已挂载至 window.__BOOKS__ ，根据 _id 获取相应信息即可
+
+            // 假设此处获取到了编辑好的书籍信息，此处写死，使用变量替换即可
+            var newBookName = 'C++ 从放弃到坚持放弃',
+                newBookAuthor = '高等教育出版社',
+                newBookRentable = false,
+                newBookBorrower = '某个不知名的勇士',
+                newBookRemarks = '这是一本假书';
+
+            axios('/books/update', {
+                method: 'POST',
+                data: {
+                    id,
+                    name: newBookName,
+                    author: newBookAuthor,
+                    rentable: newBookRentable,
+                    borrower: newBookBorrower,
+                    remarks: newBookRemarks
+                }
+            }).then(function (res) {
+                alert(res.data.message);
+                getBookList();
+            }).catch(function (err) {
+                alert('修改图书信息时出现请求错误');
+            });
+        }
+
+        function removeBook(id) {
+            axios('/books/remove', {
+                method: 'DELETE',
+                data: { id }
+            }).then(function (res) {
+                alert(res.data.message);
+                getBookList();
+            }).catch(function (err) {
+                alert('删除图书信息时出现请求错误');
+            })
+        }
+
+        $(function() {
+            getBookList();
+        })
+    </script>
+</body>
+</html>
